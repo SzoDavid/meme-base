@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Meme List</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        let page = 2;  // Initial page for loading more memes
+        let loading = false, hasNext = true;
+
+        $(document).ready(function () {
+            $(window).scroll(function () {
+                if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+                    loadMoreMemes();
+                }
+            });
+        });
+
+        function loadMoreMemes() {
+            console.log("load start")
+            if (loading || !hasNext) {
+                return;
+            }
+
+            console.log("load")
+            loading = true;
+            $('#loader').show();
+
+
+            $.ajax({
+                url: '/memes/load-more-memes/',
+                data: { 'page': page },
+                success: function (data) {
+                    console.log("asd")
+                    $('#loader').hide();
+
+                    if (data.memes.length > 0) {
+                        page++;
+                        for (let i = 0; i < data.memes.length; i++) {
+                            let memeHtml = ""
+                            let meme = data.memes[i];
+                            if (meme.media_file) {
+                                memeHtml += '<img src="' + meme.media_file + '" alt="Meme Image">';
+                            }
+                            memeHtml += '</div>';
+                            $('#meme-list').append(memeHtml);
+                        }
+                    }
+
+                    loading = false;
+                    hasNext = data.has_next;
+                },
+                error: function () {
+                    console.error("oof")
+                    $('#loader').hide();
+                    loading = false;
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Meme List</h1>
+    <div id="meme-list">
+        {% for meme in memes %}
+        <div>
+            {% if meme.type != MediaType.VID %}
+                <img style="width: 50%" src="{{ meme.media_file.url }}" alt="meme">
+            {% else %}
+                <video controls width="300" height="200">
+                    <source src="{{ meme.media_file.url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            {% endif %}
+        </div>
+    {% endfor %}
+    </div>
+    <div id="loader" style="display: none;">Loading...</div>
+</body>
+</html>
